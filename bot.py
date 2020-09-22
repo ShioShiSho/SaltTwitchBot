@@ -13,6 +13,8 @@ import utils
 
 GAMEGRAMMAR_USER_ID = 427289393
 
+command_list_with_bruh = ['resetbruh', 'bruhcount']
+
 class Bot(commands.Bot):
     def __init__(self):
         super().__init__(
@@ -30,7 +32,7 @@ class Bot(commands.Bot):
 
     async def event_message(self, message):
         utils.log_kv('[Bot#event_message] New message', message.content)
-        if 'bruh' in message.content.lower() and not message.author.name == config.bot_nick and not 'reset_bruh' in message.content:
+        if 'bruh' in message.content.lower() and not message.author.name == config.bot_nick and not any (command in message.content for command in command_list_with_bruh):
             print('bruh found')
             if bot_db.exists_data('bruhs'):
                 bot_db.increment_bruhs()
@@ -41,14 +43,14 @@ class Bot(commands.Bot):
         await self.handle_commands(message)
 
 
-    @commands.command(name='reset_bruh')
+    @commands.command(name='resetbruh')
     async def res_bruh(self, ctx):
         if not bot_db.exists_admin(ctx.author.name):
             utils.log_body('[Bot#mod_command] Access denied to ' + ctx.author.name)
             return
 
         if bot_db.exists_data('bruhs'):
-            bot_db.reset_bruh()
+            bot_db.resetbruh()
             await ctx.send('Reset Bruh Coutner to 0')
         else:
             await ctx.send('No Bruh-coutner initialized')
@@ -68,6 +70,12 @@ class Bot(commands.Bot):
             entry = int(entry)
         bot_db.add_data(name, entry)
 
+    @commands.command(name='bc', aliases=['bruhcount'])
+    async def bruhcount(self, ctx):
+        if not bot_db.exists_data("bruhs"):
+            bot_db.add_data("bruhs", 0)       
+        bruhs = bot_db.get_data("bruhs")[0]["bruhs"]
+        await ctx.send(f'Current bruh count: {bruhs}')
 
     @commands.command(name='mods')
     async def mods_command(self, ctx):
