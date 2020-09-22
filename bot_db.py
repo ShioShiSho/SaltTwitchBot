@@ -1,7 +1,11 @@
 from tinydb import TinyDB, Query, operations, where
+from pathlib import Path
+
+data_folder = Path("data/")
+file_to_open = data_folder / "db.json"
 
 
-db = TinyDB('./data/db.json')
+db = TinyDB(file_to_open)
 db_data = db.table('data')
 db_admins = db.table('admins')
 
