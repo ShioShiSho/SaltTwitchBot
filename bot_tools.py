@@ -22,8 +22,8 @@ def shorten_part_of_speech(pos):
     return shortened_parts_of_speech.get(pos, pos)
 
 
-def is_admin(name):
-    return name in config.admins
+def is_superadmin(name):
+    return name in config.superadmins
 
 
 def get_trailing_numbers(phrase):

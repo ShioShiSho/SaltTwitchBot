@@ -1,6 +1,10 @@
 from twitchio.ext import commands
 from twitchio.ext.commands.core import Command
 
+import unicodedata
+import itertools
+import random
+
 import config
 import bot_tools
 import bot_db
@@ -8,8 +12,6 @@ import utils
 
 
 GAMEGRAMMAR_USER_ID = 427289393
-tag_names = [t['name'] for t in bot_db.get_all_tags()]
-
 
 class Bot(commands.Bot):
     def __init__(self):
@@ -23,24 +25,97 @@ class Bot(commands.Bot):
 
     async def event_ready(self):
         utils.log_kv('[Bot#event_ready] Ready with username', self.nick)
-        utils.log_kv('Tags', bot_db.get_all_tags())
-        utils.log_kv('Mods', bot_db.get_all_mods())
-        utils.log_kv('Superadmins', config.superadmins)
+        utils.log_kv('Admins: ', bot_db.get_all_admins())
+
 
     async def event_message(self, message):
         utils.log_kv('[Bot#event_message] New message', message.content)
+        if ' bruh' in message.content.lower() and not message.author.name == config.bot_nick:
+            print('bruh found')
+            if bot_db.exists_data('bruhs'):
+                bot_db.increment_bruhs()
+                bruhs = bot_db.get_data('bruhs')
+                await message.channel.send(f'Bruh Counter: {bruhs[0]["bruhs"]}')
+            else:
+                print('No data')
         await self.handle_commands(message)
 
+
+    @commands.command(name='reset_bruh')
+    async def res_bruh(self, ctx):
+        if not bot_db.exists_admin(ctx.author.name):
+            utils.log_body('[Bot#mod_command] Access denied to ' + ctx.author.name)
+            return
+
+        if bot_db.exists_data('bruhs'):
+            bot_db.reset_bruh()
+            ctx.send('Reset Bruh Coutner to 0')
+        else:
+            await ctx.send('No Bruh-coutner initialized')
+
+    @commands.command(name='add_data')
+    async def add_data(self, ctx):
+        if not bot_db.exists_admin(ctx.author.name):
+            utils.log_body('[Bot#mod_command] Access denied to ' + ctx.author.name)
+            return
+        try:
+            command = bot_tools.parse_command(ctx.message.content, 2)
+        except ValueError:
+            return await ctx.send('Usage: add_data <name> <entry>')
+
+        [_, name, entry] = command
+        if entry.isdigit():
+            entry = int(entry)
+        bot_db.add_data(name, entry)
+
+
+    @commands.command(name='mods')
+    async def mods_command(self, ctx):
+        mods = [mod['name'] for mod in bot_db.get_all_admins()]
+        await ctx.send('Mods: {}'.format(', '.join(mods)))
+
+    @commands.command(name='mod')
+    async def mod_command(self, ctx):
+        if not bot_tools.is_superadmin(ctx.author.name):
+            utils.log_body('[Bot#mod_command] Access denied to ' + ctx.author.name)
+            return
+        try:
+            command = bot_tools.parse_command(ctx.message.content, 1)
+        except ValueError:
+            return await ctx.send('Usage: mod <name>')
+
+        [_, mod_name] = command
+        utils.log_kv('Modding', mod_name)
+
+        if bot_db.exists_admin(mod_name):
+            await ctx.send(f'{mod_name} is already a mod.')
+        else:
+            bot_db.add_admin(mod_name)
+            await ctx.send(f'Modded {mod_name}.')
+
+    @commands.command(name='demod')
+    async def demod_command(self, ctx):
+        if not bot_tools.is_superadmin(ctx.author.name):
+            utils.log_body('[Bot#demod_command] Access denied to ' + ctx.author.name)
+            return
+        try:
+            command = bot_tools.parse_command(ctx.message.content, 1)
+        except ValueError:
+            return await ctx.send('Usage: demod <name>')
+
+        [_, user_name] = command
+        utils.log_kv('Demodding', user_name)
+
+        if bot_db.exists_admin(user_name):
+            bot_db.remove_admin(user_name)
+            await ctx.send(f'Demodded {user_name}.')
+        else:
+            await ctx.send(f'{user_name} is not a mod.')
 
     @commands.command(name='test')
     async def test_command(self, ctx):
         await ctx.send(f'Hello {ctx.author.name}!')
 
-
-    # @commands.command(name='stats')
-    # async def stats_command(self, ctx):
-    #     n_followers = await self.get_followers(GAMEGRAMMAR_USER_ID, count=True)
-    #     await ctx.send(f'GameGrammar has {n_followers} followers!')
 
     def get_jisho_results_message(self, keywords, result_index=None):
         results = bot_tools.jisho(keywords)
@@ -88,7 +163,7 @@ class Bot(commands.Bot):
         word = result["japanese"][0].get("word", None)
         reading = result["japanese"][0].get("reading", None)
 
-        message = 'NaruhodoThink'
+        message = 'Kappa'
         if word is not None:
             message += f' {word}'
         if reading is not None:
