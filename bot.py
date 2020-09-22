@@ -49,7 +49,7 @@ class Bot(commands.Bot):
 
         if bot_db.exists_data('bruhs'):
             bot_db.reset_bruh()
-            ctx.send('Reset Bruh Coutner to 0')
+            await ctx.send('Reset Bruh Coutner to 0')
         else:
             await ctx.send('No Bruh-coutner initialized')
 
