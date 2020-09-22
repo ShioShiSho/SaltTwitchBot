@@ -30,7 +30,7 @@ class Bot(commands.Bot):
 
     async def event_message(self, message):
         utils.log_kv('[Bot#event_message] New message', message.content)
-        if ' bruh' in message.content.lower() and not message.author.name == config.bot_nick:
+        if 'bruh' in message.content.lower() and not message.author.name == config.bot_nick and not 'reset_bruh' in message.content:
             print('bruh found')
             if bot_db.exists_data('bruhs'):
                 bot_db.increment_bruhs()
